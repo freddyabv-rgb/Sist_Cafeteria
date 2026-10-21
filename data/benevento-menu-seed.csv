@@ -1,0 +1,22 @@
+category,product_name,variant_name,price,station,source,tracking_mode,modifier_groups
+Cafetería Caliente,Espresso,8oz,7.00,BARRA,OWN,BY_RECIPE,Extras de Café
+Cafetería Caliente,Americano,8oz,8.00,BARRA,OWN,BY_RECIPE,Extras de Café
+Cafetería Caliente,Americano,12oz,10.00,BARRA,OWN,BY_RECIPE,Extras de Café
+Cafetería Caliente,Cappuccino,8oz,10.00,BARRA,OWN,BY_RECIPE,Tipo de Leche;Extras de Café;Endulzante
+Cafetería Caliente,Cappuccino,12oz,12.00,BARRA,OWN,BY_RECIPE,Tipo de Leche;Extras de Café;Endulzante
+Cafetería Caliente,Latte,12oz,12.00,BARRA,OWN,BY_RECIPE,Tipo de Leche;Extras de Café;Endulzante
+Cafetería Caliente,Flat White,8oz,11.00,BARRA,OWN,BY_RECIPE,Tipo de Leche;Extras de Café;Endulzante
+Cafetería Caliente,Mocha,12oz,14.00,BARRA,OWN,BY_RECIPE,Tipo de Leche;Extras de Café;Endulzante
+Bebidas Frías,Cold Brew,12oz,12.00,BARRA,OWN,BY_RECIPE,Tipo de Leche;Endulzante
+Bebidas Frías,Iced Latte,16oz,14.00,BARRA,OWN,BY_RECIPE,Tipo de Leche;Extras de Café;Endulzante
+Bebidas Frías,Frappé de Moka,16oz,16.00,BARRA,OWN,BY_RECIPE,Tipo de Leche;Extras de Café
+Heladería Artesanal,Gelato Simple,1 Bola,9.00,VITRINA,OWN,BY_UNIT,Toppings de Helado
+Heladería Artesanal,Gelato Doble,2 Bolas,15.00,VITRINA,OWN,BY_UNIT,Toppings de Helado
+Heladería Artesanal,Copa Benevento Especial,Especial,22.00,VITRINA,OWN,BY_UNIT,Toppings de Helado
+Pastelería Fina,Croissant Clásico,Unidad,7.50,VITRINA,OWN,BY_UNIT,
+Pastelería Fina,Croissant de Almendras,Unidad,11.00,VITRINA,OWN,BY_UNIT,
+Pastelería Fina,Tarta de Frutos Rojos,Porción,14.00,VITRINA,OWN,BY_UNIT,
+Pastelería Fina,Tiramisú Tradicional,Porción,15.00,VITRINA,OWN,BY_UNIT,
+Pastelería Fina,Brownie con Nuez,Unidad,8.50,VITRINA,OWN,BY_UNIT,
+Sándwiches & Salados,Tostón con Palta,Porción,16.00,COCINA,OWN,BY_UNIT,
+Sándwiches & Salados,Croissant Mixto Caliente,Unidad,13.50,COCINA,OWN,BY_UNIT,

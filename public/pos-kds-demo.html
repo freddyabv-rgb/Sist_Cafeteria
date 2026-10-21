@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BENEVENTO - CoffeeOS POS & KDS</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    :root {
+      --benevento-cyan: #00B4D8;
+      --benevento-cyan-dark: #0096B4;
+      --benevento-pastel: #7FBCC6;
+      --benevento-slate: #566F75;
+      --benevento-cream: #F8F7F4;
+      --benevento-dark: #1E292E;
+      --benevento-grey: #CBCDCE;
+      --benevento-amber: #F59E0B;
+      --benevento-emerald: #10B981;
+      --benevento-rose: #EF4444;
+    }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .receipt-paper {
+      background: #FFFDF9;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      font-family: 'Courier New', Courier, monospace;
+      color: #111;
+    }
+    @keyframes ticketFeed {
+      0% { transform: translateY(-30px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+    .feed-animation {
+      animation: ticketFeed 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+<body class="bg-[#F8F7F4] text-[#1E292E] min-h-screen flex flex-col antialiased">
+  <header class="bg-[#1E292E] text-white px-5 py-3 flex items-center justify-between border-b border-[#566F75]/30 shadow-md">
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2">
+        <div class="w-10 h-10 rounded-xl bg-[#00B4D8] flex items-center justify-center font-bold text-white text-xl shadow-inner">
+          B
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-wider text-white">BENEVENTO</h1>
+          <p class="text-xs text-[#7FBCC6] font-medium tracking-wide">Heladería • Pastelería • Cafetería</p>
+        </div>
+      </div>
+      <div class="h-6 w-px bg-[#566F75]/40 mx-2 hidden sm:block"></div>
+      <div class="hidden sm:flex items-center gap-2 text-xs text-[#CBCDCE]">
+        <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>Caja 01 • Turno Abierto</span>
+        <span class="text-[#7FBCC6]">|</span>
+        <span>Cajera: María Paz</span>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-1 bg-[#2C3B42] p-1 rounded-xl border border-[#566F75]/40">
+      <button id="nav-pos" onclick="switchView('pos')" class="px-4 py-2 rounded-lg font-semibold text-xs transition-all flex items-center gap-2 bg-[#00B4D8] text-white shadow-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        POS Mostrador
+      </button>
+      <button id="nav-kds" onclick="switchView('kds')" class="px-4 py-2 rounded-lg font-semibold text-xs transition-all flex items-center gap-2 text-[#CBCDCE] hover:text-white hover:bg-[#394B54]">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        Barista KDS <span id="kds-badge" class="ml-1 px-1.5 py-0.2 bg-[#00B4D8] text-[#1E292E] font-bold rounded-full text-xs">2</span>
+      </button>
+      <button id="nav-ticket" onclick="switchView('ticket')" class="px-4 py-2 rounded-lg font-semibold text-xs transition-all flex items-center gap-2 text-[#CBCDCE] hover:text-white hover:bg-[#394B54]">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+        Xprinter 80T
+      </button>
+    </div>
+
+    <div class="hidden md:flex items-center gap-3">
+      <div class="text-right">
+        <div id="live-clock" class="text-xs font-mono font-bold text-[#F8F7F4]">08:45:12</div>
+        <div class="text-[11px] text-[#7FBCC6]">Fondo: S/ 100.00</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- VISTA POS -->
+  <main id="view-pos" class="flex-1 flex overflow-hidden">
+    <div class="flex-1 flex flex-col p-4 overflow-y-auto">
+      <div class="flex items-center gap-2 overflow-x-auto pb-2 mb-3">
+        <button onclick="filterCategory('ALL')" class="cat-btn px-4 py-2.5 rounded-xl font-bold text-xs whitespace-nowrap bg-[#00B4D8] text-white shadow-sm" data-cat="ALL">✨ Todos</button>
+        <button onclick="filterCategory('CAFE')" class="cat-btn px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap bg-white text-[#566F75] border border-[#CBCDCE]/50" data-cat="CAFE">☕ Café de Especialidad</button>
+        <button onclick="filterCategory('GELATO')" class="cat-btn px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap bg-white text-[#566F75] border border-[#CBCDCE]/50" data-cat="GELATO">🍨 Gelato Artesanal</button>
+        <button onclick="filterCategory('VITRINA')" class="cat-btn px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap bg-white text-[#566F75] border border-[#CBCDCE]/50" data-cat="VITRINA">🥐 Pastelería & Vitrina</button>
+        <button onclick="filterCategory('SANDWICH')" class="cat-btn px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap bg-white text-[#566F75] border border-[#CBCDCE]/50" data-cat="SANDWICH">🥪 Sándwiches</button>
+      </div>
+      <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+    </div>
+
+    <div class="w-80 md:w-96 bg-white border-l border-[#CBCDCE]/60 flex flex-col shadow-lg">
+      <div class="p-3.5 border-b border-[#CBCDCE]/50 flex items-center justify-between bg-[#F8F7F4]">
+        <div>
+          <span class="text-xs font-bold text-[#1E292E] uppercase tracking-wider">Comanda en Curso</span>
+          <div class="text-xs text-[#566F75]">Ticket: <strong id="next-ticket-num">C1-0015</strong></div>
+        </div>
+        <div class="flex bg-[#E2E8F0] p-0.5 rounded-lg text-xs font-semibold">
+          <button id="btn-dinein" onclick="setOrderType('DINE_IN')" class="px-2.5 py-1 rounded-md transition-all bg-white text-[#1E292E] shadow-sm">Salón</button>
+          <button id="btn-takeaway" onclick="setOrderType('TAKEAWAY')" class="px-2.5 py-1 rounded-md transition-all text-[#566F75]">Llevar</button>
+        </div>
+      </div>
+      <div id="cart-items" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
+      <div class="p-3.5 border-t border-[#CBCDCE]/50 bg-[#F8F7F4]/70 space-y-1.5 text-xs">
+        <div class="flex justify-between text-[#566F75]">
+          <span>Subtotal gravado:</span>
+          <span id="summary-subtotal" class="font-mono">S/ 0.00</span>
+        </div>
+        <div class="flex justify-between text-[#566F75]">
+          <span>IGV (18% incluido):</span>
+          <span id="summary-tax" class="font-mono">S/ 0.00</span>
+        </div>
+        <div class="flex justify-between text-[#566F75] items-center">
+          <span class="flex items-center gap-1">
+            <span>Propina Barista:</span>
+            <button onclick="toggleTipPrompt()" class="text-[#00B4D8] underline text-[11px]">+ Añadir</button>
+          </span>
+          <span id="summary-tip" class="font-mono">S/ 0.00</span>
+        </div>
+        <div class="pt-2 border-t border-[#CBCDCE]/60 flex justify-between items-baseline">
+          <span class="text-sm font-bold text-[#1E292E]">TOTAL A PAGAR:</span>
+          <span id="summary-total" class="text-xl font-bold font-mono text-[#00B4D8]">S/ 0.00</span>
+        </div>
+      </div>
+      <div class="p-3 border-t border-[#CBCDCE]/60 bg-white grid grid-cols-2 gap-2">
+        <button onclick="openCashPayment()" class="col-span-2 py-3 bg-[#00B4D8] hover:bg-[#0096B4] text-white rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2">
+          Cobro Rápido Efectivo [F1]
+        </button>
+        <button onclick="openDigitalPayment('YAPE')" class="py-2.5 bg-[#742774] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5">📱 Yape / Plin</button>
+        <button onclick="openCardPayment()" class="py-2.5 bg-[#1E292E] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5">💳 Tarjeta / POS</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- VISTA KDS -->
+  <main id="view-kds" class="flex-1 flex flex-col p-4 bg-[#1E292E] text-white overflow-hidden hidden">
+    <div class="flex items-center justify-between pb-3 border-b border-[#566F75]/40 mb-3">
+      <div class="flex items-center gap-3">
+        <span class="px-2.5 py-1 rounded-md bg-[#00B4D8]/20 border border-[#00B4D8] text-[#00B4D8] text-xs font-bold uppercase">Estación Barra • Despacho Café</span>
+        <span class="text-xs text-[#CBCDCE]">Tiempo meta SLA: &lt; 90s</span>
+      </div>
+      <div class="flex items-center gap-3 text-xs">
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> &lt; 90s Óptimo</span>
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-500"></span> 90-180s Alerta</span>
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-rose-500"></span> &gt; 180s Urgente</span>
+      </div>
+    </div>
+    <div id="kds-cards-container" class="flex-1 overflow-x-auto flex gap-4 pb-2 items-start"></div>
+  </main>
+
+  <!-- VISTA TICKET -->
+  <main id="view-ticket" class="flex-1 flex items-center justify-center p-6 bg-[#2C3B42] hidden">
+    <div class="receipt-paper w-80 max-w-full rounded-sm p-5 text-xs feed-animation border-t-8 border-dashed border-[#566F75]/30">
+      <div class="text-center pb-3 border-b border-dashed border-gray-400">
+        <h2 class="text-sm font-bold tracking-wider">BENEVENTO</h2>
+        <p class="text-[11px] text-gray-700">Heladería • Pastelería • Cafetería</p>
+        <p class="text-[10px] text-gray-500 mt-1">Av. La Encalada 1204 - Surco</p>
+        <p class="text-[10px] text-gray-500">RUC: 20601234567 • TEL: 01-4458900</p>
+        <div class="mt-2 text-xs font-bold bg-gray-100 py-1">TICKET DE CONTROL DE VENTA</div>
+        <p id="receipt-ticket-num" class="text-xs font-bold mt-1">TICKET: C1-0014</p>
+        <p id="receipt-date" class="text-[10px] text-gray-500">11/10/2026 08:42:15</p>
+      </div>
+      <div class="py-2 text-[11px] border-b border-dashed border-gray-400">
+        <div class="flex justify-between">
+          <span>CLIENTE: CLIENTE GENERAL</span>
+          <span id="receipt-type" class="font-bold">[LLEVAR]</span>
+        </div>
+        <div class="flex justify-between text-gray-500 text-[10px]">
+          <span>CAJERO: MARÍA PAZ</span>
+          <span>CAJA: 01</span>
+        </div>
+      </div>
+      <div id="receipt-items-list" class="py-2.5 border-b border-dashed border-gray-400 space-y-1.5 text-[11px]"></div>
+      <div class="py-2 border-b border-dashed border-gray-400 space-y-1 text-[11px]">
+        <div class="flex justify-between">
+          <span>OP. GRAVADA (PEN):</span>
+          <span id="receipt-subtotal" class="font-mono">S/ 24.58</span>
+        </div>
+        <div class="flex justify-between">
+          <span>I.G.V. (18.00%):</span>
+          <span id="receipt-tax" class="font-mono">S/ 4.42</span>
+        </div>
+        <div class="flex justify-between">
+          <span>PROPINA VOLUNTARIA:</span>
+          <span id="receipt-tip" class="font-mono">S/ 2.00</span>
+        </div>
+        <div class="flex justify-between text-sm font-bold pt-1 border-t border-gray-300">
+          <span>TOTAL A PAGAR:</span>
+          <span id="receipt-total" class="font-mono">S/ 31.00</span>
+        </div>
+      </div>
+      <div class="py-2 text-[10px] text-gray-600 border-b border-dashed border-gray-400">
+        <div class="flex justify-between">
+          <span>FORMA DE PAGO:</span>
+          <span id="receipt-payment-method" class="font-bold">EFECTIVO</span>
+        </div>
+        <div class="flex justify-between">
+          <span>IMPORTE RECIBIDO:</span>
+          <span id="receipt-tendered" class="font-mono">S/ 50.00</span>
+        </div>
+        <div class="flex justify-between font-bold text-gray-800">
+          <span>VUELTO:</span>
+          <span id="receipt-change" class="font-mono">S/ 19.00</span>
+        </div>
+        <div class="mt-1 text-[9px] text-gray-400 text-center font-mono">[PULSO RJ11 EMITIDO: ESC p 0 25 250]</div>
+      </div>
+      <div class="text-center pt-3 text-[10px] text-gray-500">
+        <p>¡Gracias por su visita!</p>
+        <p class="font-mono text-[9px] mt-1">*** CORTE TOTAL GS V 0 ***</p>
+      </div>
+      <div class="mt-4 flex gap-2">
+        <button onclick="switchView('pos')" class="flex-1 py-2 bg-[#00B4D8] text-white rounded-lg font-bold text-xs shadow-sm">Nueva Venta</button>
+        <button onclick="window.print()" class="px-3 py-2 bg-gray-200 text-gray-800 rounded-lg font-bold text-xs">Imprimir</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- MODALES -->
+  <div id="modal-modifiers" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-[#566F75]/20">
+      <div class="bg-[#1E292E] text-white p-4 flex items-center justify-between">
+        <div>
+          <span class="text-xs text-[#7FBCC6] font-semibold uppercase">Personalizar Bebida</span>
+          <h3 id="mod-modal-title" class="text-base font-bold text-white">Latte</h3>
+        </div>
+        <button onclick="closeModifierModal()" class="text-[#CBCDCE] hover:text-white text-lg p-1">✕</button>
+      </div>
+      <div class="p-4 space-y-4 max-h-[70vh] overflow-y-auto text-xs">
+        <div>
+          <label class="font-bold text-[#1E292E] block mb-1.5">1. Tamaño de Taza</label>
+          <div class="grid grid-cols-2 gap-2" id="mod-group-size">
+            <button onclick="selectSize('8oz', 12.00)" class="size-btn p-2.5 rounded-xl border-2 border-[#CBCDCE] font-bold text-center" data-size="8oz">
+              8 oz (Standard)<div class="text-[11px] text-[#566F75]">S/ 12.00</div>
+            </button>
+            <button onclick="selectSize('12oz', 14.50)" class="size-btn p-2.5 rounded-xl border-2 border-[#00B4D8] bg-[#00B4D8]/10 font-bold text-center" data-size="12oz">
+              12 oz (Grande)<div class="text-[11px] text-[#00B4D8]">S/ 14.50</div>
+            </button>
+          </div>
+        </div>
+        <div>
+          <label class="font-bold text-[#1E292E] block mb-1.5">2. Tipo de Leche (Sustitución)</label>
+          <div class="grid grid-cols-3 gap-2" id="mod-group-milk">
+            <button onclick="selectMilk('Entera', 0.00)" class="milk-btn p-2.5 rounded-xl border-2 border-[#00B4D8] bg-[#00B4D8]/10 font-bold text-center" data-milk="Entera">Entera<div class="text-[10px] text-[#566F75]">Incluida</div></button>
+            <button onclick="selectMilk('Avena', 3.00)" class="milk-btn p-2.5 rounded-xl border-2 border-[#CBCDCE] font-bold text-center" data-milk="Avena">Avena<div class="text-[10px] text-[#00B4D8]">+ S/ 3.00</div></button>
+            <button onclick="selectMilk('Almendra', 3.50)" class="milk-btn p-2.5 rounded-xl border-2 border-[#CBCDCE] font-bold text-center" data-milk="Almendra">Almendra<div class="text-[10px] text-[#00B4D8]">+ S/ 3.50</div></button>
+          </div>
+        </div>
+        <div>
+          <label class="font-bold text-[#1E292E] block mb-1.5">3. Extras y Adiciones</label>
+          <div class="space-y-1.5">
+            <label class="flex items-center justify-between p-2.5 rounded-xl border border-[#CBCDCE] cursor-pointer">
+              <span class="flex items-center gap-2 font-semibold">
+                <input type="checkbox" id="mod-extra-shot" class="rounded text-[#00B4D8] w-4 h-4" onchange="calcModalPrice()">
+                <span>Extra Shot de Espresso (9g)</span>
+              </span>
+              <span class="font-bold text-[#00B4D8]">+ S/ 3.50</span>
+            </label>
+            <label class="flex items-center justify-between p-2.5 rounded-xl border border-[#CBCDCE] cursor-pointer">
+              <span class="flex items-center gap-2 font-semibold">
+                <input type="checkbox" id="mod-jarabe-vainilla" class="rounded text-[#00B4D8] w-4 h-4" onchange="calcModalPrice()">
+                <span>Jarabe de Vainilla Francesa (20ml)</span>
+              </span>
+              <span class="font-bold text-[#00B4D8]">+ S/ 2.50</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="p-3 bg-[#F8F7F4] border-t border-[#CBCDCE] flex items-center justify-between">
+        <div>
+          <div class="text-[10px] text-[#566F75]">Precio Unitario:</div>
+          <div id="modal-calculated-price" class="text-lg font-bold font-mono text-[#00B4D8]">S/ 14.50</div>
+        </div>
+        <button onclick="confirmAddItemWithModifiers()" class="px-5 py-2.5 bg-[#00B4D8] hover:bg-[#0096B4] text-white rounded-xl font-bold text-xs shadow-md">Añadir a Comanda</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-cash" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden border border-[#566F75]/20">
+      <div class="bg-[#1E292E] text-white p-4 flex justify-between items-center">
+        <div>
+          <span class="text-xs text-[#7FBCC6] font-semibold uppercase">Punto de Venta</span>
+          <h3 class="text-base font-bold text-white">Cobro en Efectivo</h3>
+        </div>
+        <button onclick="closeCashModal()" class="text-[#CBCDCE] hover:text-white text-lg">✕</button>
+      </div>
+      <div class="p-4 space-y-3.5 text-xs">
+        <div class="p-3 rounded-xl bg-[#F8F7F4] border border-[#CBCDCE]/60 flex justify-between items-center">
+          <span class="font-bold text-[#566F75]">TOTAL A COBRAR:</span>
+          <span id="cash-modal-total" class="text-xl font-bold font-mono text-[#00B4D8]">S/ 0.00</span>
+        </div>
+        <div>
+          <label class="font-bold text-[#1E292E] block mb-1">Monto Recibido del Cliente (PEN):</label>
+          <input type="number" id="cash-input-tendered" step="0.50" oninput="calcChange()" class="w-full text-lg font-mono font-bold p-2.5 rounded-xl border-2 border-[#00B4D8] text-right focus:outline-none" placeholder="0.00">
+        </div>
+        <div class="grid grid-cols-4 gap-1.5" id="quick-cash-buttons">
+          <button onclick="setTenderedExact()" class="p-2 rounded-lg bg-[#E2E8F0] hover:bg-[#CBD5E1] font-bold text-center">Exacto</button>
+          <button onclick="setTendered(20)" class="p-2 rounded-lg bg-[#E2E8F0] hover:bg-[#CBD5E1] font-bold text-center">S/ 20</button>
+          <button onclick="setTendered(50)" class="p-2 rounded-lg bg-[#E2E8F0] hover:bg-[#CBD5E1] font-bold text-center">S/ 50</button>
+          <button onclick="setTendered(100)" class="p-2 rounded-lg bg-[#E2E8F0] hover:bg-[#CBD5E1] font-bold text-center">S/ 100</button>
+        </div>
+        <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-300 flex justify-between items-center">
+          <span class="font-bold text-emerald-800">VUELTO A ENTREGAR:</span>
+          <span id="cash-modal-change" class="text-xl font-bold font-mono text-emerald-700">S/ 0.00</span>
+        </div>
+      </div>
+      <div class="p-3 bg-[#F8F7F4] border-t border-[#CBCDCE] flex gap-2">
+        <button onclick="closeCashModal()" class="flex-1 py-2.5 bg-gray-200 text-[#1E292E] font-bold rounded-xl text-xs">Cancelar</button>
+        <button id="btn-complete-cash" onclick="executeCashCheckout()" class="flex-1 py-2.5 bg-[#00B4D8] hover:bg-[#0096B4] text-white font-bold rounded-xl text-xs shadow-md">Confirmar & Abrir Gaveta</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-digital" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden border border-[#566F75]/20 text-center">
+      <div class="bg-[#742774] text-white p-4">
+        <h3 class="text-base font-bold">Cobro con Yape / Plin</h3>
+        <p class="text-xs text-purple-200">Billeteras Digitales</p>
+      </div>
+      <div class="p-5 space-y-3 text-xs">
+        <div class="w-36 h-36 bg-gray-100 mx-auto rounded-xl border-2 border-dashed border-[#742774] flex flex-col items-center justify-center">
+          <span class="text-xs font-bold text-[#742774]">QR DINÁMICO</span>
+        </div>
+        <div class="font-mono text-base font-bold text-[#1E292E]" id="digital-modal-total">S/ 0.00</div>
+        <div>
+          <label class="block text-[11px] font-semibold text-gray-600 mb-1">Nro. de Operación:</label>
+          <input type="text" id="digital-voucher-ref" placeholder="Ej. 849201" class="w-full text-center p-2 rounded-xl border border-gray-300 font-mono text-sm focus:outline-none">
+        </div>
+      </div>
+      <div class="p-3 bg-gray-50 flex gap-2">
+        <button onclick="closeDigitalModal()" class="flex-1 py-2.5 bg-gray-200 text-gray-700 font-bold rounded-xl text-xs">Cancelar</button>
+        <button onclick="executeDigitalCheckout()" class="flex-1 py-2.5 bg-[#742774] text-white font-bold rounded-xl text-xs">Confirmar Pago</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      orderType: 'TAKEAWAY',
+      cart: [],
+      tipAmount: 0.00,
+      activeTicketNumber: 'C1-0015',
+      kdsOrders: [
+        {
+          id: 'kds-1',
+          ticketNum: 'C1-0013',
+          orderType: 'DINE_IN',
+          elapsedSeconds: 58,
+          status: 'PREPARING',
+          items: [{ name: 'Latte 12oz', station: 'BARRA', modifiers: ['Leche de Avena', 'Extra Shot'], qty: 1 }]
+        },
+        {
+          id: 'kds-2',
+          ticketNum: 'C1-0014',
+          orderType: 'TAKEAWAY',
+          elapsedSeconds: 124,
+          status: 'RECEIVED',
+          items: [{ name: 'Flat White 8oz', station: 'BARRA', modifiers: ['Leche Entera'], qty: 2 }]
+        }
+      ],
+      currentEditingProduct: null,
+      selectedSize: '12oz',
+      selectedSizePrice: 14.50,
+      selectedMilk: 'Entera',
+      selectedMilkPrice: 0.00
+    };
+
+    const CATALOG = [
+      { id: 'prod-latte', name: 'Latte', category: 'CAFE', station: 'BARRA', basePrice: 14.50, hasModifiers: true, desc: 'Espresso y leche texturizada' },
+      { id: 'prod-flatwhite', name: 'Flat White', category: 'CAFE', station: 'BARRA', basePrice: 13.50, hasModifiers: true, desc: 'Doble ristretto con microespuma' },
+      { id: 'prod-cappuccino', name: 'Cappuccino', category: 'CAFE', station: 'BARRA', basePrice: 14.00, hasModifiers: true, desc: 'Espresso, leche y espuma densa' },
+      { id: 'prod-espresso', name: 'Espresso Single', category: 'CAFE', station: 'BARRA', basePrice: 9.00, hasModifiers: true, desc: 'Extracción 1:2 en 28 segundos' },
+      { id: 'prod-americano', name: 'Americano', category: 'CAFE', station: 'BARRA', basePrice: 10.50, hasModifiers: true, desc: 'Espresso con agua caliente' },
+      { id: 'prod-gelato-doble', name: 'Gelato Doble', category: 'GELATO', station: 'BARRA', basePrice: 15.00, hasModifiers: false, desc: '2 sabores a elección' },
+      { id: 'prod-gelato-simple', name: 'Gelato Simple', category: 'GELATO', station: 'BARRA', basePrice: 9.50, hasModifiers: false, desc: '1 sabor en copa o cono' },
+      { id: 'prod-croissant', name: 'Croissant Francés', category: 'VITRINA', station: 'VITRINA', basePrice: 8.50, hasModifiers: false, desc: '100% mantequilla horneado' },
+      { id: 'prod-tarta-frutos', name: 'Tarta Frutos Rojos', category: 'VITRINA', station: 'VITRINA', basePrice: 14.00, hasModifiers: false, desc: 'Porción artesanal' },
+      { id: 'prod-panini-pavo', name: 'Panini de Pavo', category: 'SANDWICH', station: 'COCINA', basePrice: 18.00, hasModifiers: false, desc: 'Pavo ahumado y queso andino' }
+    ];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderProducts('ALL');
+      renderCart();
+      renderKdsCards();
+      startKdsTimer();
+      startLiveClock();
+    });
+
+    function startLiveClock() {
+      setInterval(() => {
+        const now = new Date();
+        const clockEl = document.getElementById('live-clock');
+        if (clockEl) clockEl.textContent = now.toTimeString().split(' ')[0];
+      }, 1000);
+    }
+
+    function switchView(viewName) {
+      document.getElementById('view-pos').classList.add('hidden');
+      document.getElementById('view-kds').classList.add('hidden');
+      document.getElementById('view-ticket').classList.add('hidden');
+      document.getElementById('nav-pos').className = "px-4 py-2 rounded-lg font-semibold text-xs transition-all flex items-center gap-2 text-[#CBCDCE] hover:text-white hover:bg-[#394B54]";
+      document.getElementById('nav-kds').className = "px-4 py-2 rounded-lg font-semibold text-xs transition-all flex items-center gap-2 text-[#CBCDCE] hover:text-white hover:bg-[#394B54]";
+      document.getElementById('nav-ticket').className = "px-4 py-2 rounded-lg font-semibold text-xs transition-all flex items-center gap-2 text-[#CBCDCE] hover:text-white hover:bg-[#394B54]";
+
+      if (viewName === 'pos') {
+        document.getElementById('view-pos').classList.remove('hidden');
+        document.getElementById('nav-pos').className = "px-4 py-2 rounded-lg font-semibold text-xs transition-all flex items-center gap-2 bg-[#00B4D8] text-white shadow-sm";
+      } else if (viewName === 'kds') {
+        document.getElementById('view-kds').classList.remove('hidden');
+        document.getElementById('nav-kds').className = "px-4 py-2 rounded-lg font-semibold text-xs transition-all flex items-center gap-2 bg-[#00B4D8] text-white shadow-sm";
+      } else if (viewName === 'ticket') {
+        document.getElementById('view-ticket').classList.remove('hidden');
+        document.getElementById('nav-ticket').className = "px-4 py-2 rounded-lg font-semibold text-xs transition-all flex items-center gap-2 bg-[#00B4D8] text-white shadow-sm";
+      }
+    }
+
+    function filterCategory(cat) {
+      document.querySelectorAll('.cat-btn').forEach(b => {
+        b.className = b.dataset.cat === cat
+          ? "cat-btn px-4 py-2.5 rounded-xl font-bold text-xs whitespace-nowrap bg-[#00B4D8] text-white shadow-sm"
+          : "cat-btn px-4 py-2.5 rounded-xl font-semibold text-xs whitespace-nowrap bg-white text-[#566F75] border border-[#CBCDCE]/50";
+      });
+      renderProducts(cat);
+    }
+
+    function renderProducts(categoryFilter) {
+      const grid = document.getElementById('product-grid');
+      grid.innerHTML = '';
+      const filtered = categoryFilter === 'ALL' ? CATALOG : CATALOG.filter(p => p.category === categoryFilter);
+
+      filtered.forEach(p => {
+        const card = document.createElement('div');
+        card.className = "bg-white p-3.5 rounded-2xl border border-[#CBCDCE]/50 shadow-sm hover:shadow-md hover:border-[#00B4D8] active:scale-[0.98] transition-all cursor-pointer flex flex-col justify-between";
+        card.onclick = () => handleProductClick(p);
+
+        let badgeColor = "bg-[#7FBCC6]/20 text-[#566F75]";
+        if (p.category === 'CAFE') badgeColor = "bg-[#00B4D8]/15 text-[#0096B4]";
+        if (p.category === 'GELATO') badgeColor = "bg-pink-100 text-pink-700";
+        if (p.category === 'VITRINA') badgeColor = "bg-amber-100 text-amber-700";
+
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-md ${badgeColor} uppercase tracking-wider">${p.category}</span>
+              ${p.hasModifiers ? '<span class="text-[10px] text-[#00B4D8] font-bold">Modificable</span>' : ''}
+            </div>
+            <h4 class="font-bold text-sm text-[#1E292E] line-clamp-1">${p.name}</h4>
+            <p class="text-[11px] text-[#566F75] mt-0.5 line-clamp-2">${p.desc}</p>
+          </div>
+          <div class="mt-3 pt-2 border-t border-[#CBCDCE]/30 flex items-center justify-between">
+            <span class="text-sm font-bold font-mono text-[#00B4D8]">S/ ${p.basePrice.toFixed(2)}</span>
+            <div class="w-7 h-7 rounded-lg bg-[#F8F7F4] hover:bg-[#00B4D8] hover:text-white text-[#566F75] flex items-center justify-center font-bold text-base transition-all">+</div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function handleProductClick(product) {
+      if (product.hasModifiers) {
+        openModifierModal(product);
+      } else {
+        addToCart({
+          id: product.id,
+          name: product.name,
+          station: product.station,
+          price: product.basePrice,
+          modifiers: [],
+          qty: 1
+        });
+      }
+    }
+
+    function openModifierModal(product) {
+      state.currentEditingProduct = product;
+      document.getElementById('mod-modal-title').textContent = product.name;
+      state.selectedSize = '12oz';
+      state.selectedSizePrice = product.basePrice;
+      state.selectedMilk = 'Entera';
+      state.selectedMilkPrice = 0.00;
+      document.getElementById('mod-extra-shot').checked = false;
+      document.getElementById('mod-jarabe-vainilla').checked = false;
+      calcModalPrice();
+      document.getElementById('modal-modifiers').classList.remove('hidden');
+    }
+
+    function closeModifierModal() {
+      document.getElementById('modal-modifiers').classList.add('hidden');
+    }
+
+    function selectSize(size, price) {
+      state.selectedSize = size;
+      state.selectedSizePrice = price;
+      document.querySelectorAll('.size-btn').forEach(btn => {
+        btn.className = btn.dataset.size === size
+          ? "size-btn p-2.5 rounded-xl border-2 border-[#00B4D8] bg-[#00B4D8]/10 font-bold text-center"
+          : "size-btn p-2.5 rounded-xl border-2 border-[#CBCDCE] font-bold text-center";
+      });
+      calcModalPrice();
+    }
+
+    function selectMilk(milk, price) {
+      state.selectedMilk = milk;
+      state.selectedMilkPrice = price;
+      document.querySelectorAll('.milk-btn').forEach(btn => {
+        btn.className = btn.dataset.milk === milk
+          ? "milk-btn p-2.5 rounded-xl border-2 border-[#00B4D8] bg-[#00B4D8]/10 font-bold text-center"
+          : "milk-btn p-2.5 rounded-xl border-2 border-[#CBCDCE] font-bold text-center";
+      });
+      calcModalPrice();
+    }
+
+    function calcModalPrice() {
+      let total = state.selectedSizePrice + state.selectedMilkPrice;
+      if (document.getElementById('mod-extra-shot').checked) total += 3.50;
+      if (document.getElementById('mod-jarabe-vainilla').checked) total += 2.50;
+      document.getElementById('modal-calculated-price').textContent = `S/ ${total.toFixed(2)}`;
+      return total;
+    }
+
+    function confirmAddItemWithModifiers() {
+      const p = state.currentEditingProduct;
+      const mods = [`${state.selectedSize}`];
+      if (state.selectedMilk !== 'Entera') mods.push(`Leche de ${state.selectedMilk}`);
+      if (document.getElementById('mod-extra-shot').checked) mods.push('Extra Shot');
+      if (document.getElementById('mod-jarabe-vainilla').checked) mods.push('Jarabe Vainilla');
+
+      addToCart({
+        id: p.id + '-' + mods.join('-'),
+        name: p.name,
+        station: p.station,
+        price: calcModalPrice(),
+        modifiers: mods,
+        qty: 1
+      });
+      closeModifierModal();
+    }
+
+    function addToCart(item) {
+      const existing = state.cart.find(i => i.id === item.id);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        state.cart.push(item);
+      }
+      renderCart();
+    }
+
+    function updateCartQty(index, delta) {
+      state.cart[index].qty += delta;
+      if (state.cart[index].qty <= 0) {
+        state.cart.splice(index, 1);
+      }
+      renderCart();
+    }
+
+    function setOrderType(type) {
+      state.orderType = type;
+      const dineInBtn = document.getElementById('btn-dinein');
+      const takeawayBtn = document.getElementById('btn-takeaway');
+      if (type === 'DINE_IN') {
+        dineInBtn.className = "px-2.5 py-1 rounded-md transition-all bg-white text-[#1E292E] shadow-sm";
+        takeawayBtn.className = "px-2.5 py-1 rounded-md transition-all text-[#566F75]";
+      } else {
+        takeawayBtn.className = "px-2.5 py-1 rounded-md transition-all bg-white text-[#1E292E] shadow-sm";
+        dineInBtn.className = "px-2.5 py-1 rounded-md transition-all text-[#566F75]";
+      }
+      renderCart();
+    }
+
+    function toggleTipPrompt() {
+      const tipStr = prompt("Ingrese monto de propina voluntaria en Soles (PEN):", "2.00");
+      if (tipStr !== null) {
+        const val = parseFloat(tipStr);
+        state.tipAmount = isNaN(val) ? 0.00 : Math.max(0, val);
+        renderCart();
+      }
+    }
+
+    function renderCart() {
+      const container = document.getElementById('cart-items');
+      container.innerHTML = '';
+
+      if (state.cart.length === 0) {
+        container.innerHTML = `
+          <div class="h-full flex flex-col items-center justify-center text-center p-6 text-[#566F75]">
+            <p class="text-xs font-semibold">Comanda vacía</p>
+            <p class="text-[11px] opacity-70">Seleccione productos para registrar la venta</p>
+          </div>
+        `;
+      } else {
+        state.cart.forEach((item, idx) => {
+          const itemEl = document.createElement('div');
+          itemEl.className = "p-2.5 rounded-xl border border-[#CBCDCE]/50 bg-[#F8F7F4]/40 flex justify-between items-start";
+          itemEl.innerHTML = `
+            <div class="flex-1 pr-2">
+              <div class="font-bold text-xs text-[#1E292E]">${item.name}</div>
+              ${item.modifiers.length > 0 ? `
+                <div class="text-[10px] text-[#0096B4] font-medium mt-0.5">
+                  ${item.modifiers.map(m => `• ${m}`).join(' ')}
+                </div>
+              ` : ''}
+              <div class="text-[11px] font-mono text-[#566F75] mt-1">S/ ${item.price.toFixed(2)} c/u</div>
+            </div>
+            <div class="flex flex-col items-end gap-1.5">
+              <span class="font-mono font-bold text-xs text-[#1E292E]">S/ ${(item.price * item.qty).toFixed(2)}</span>
+              <div class="flex items-center gap-1 bg-white border border-[#CBCDCE]/60 rounded-lg p-0.5">
+                <button onclick="updateCartQty(${idx}, -1)" class="w-5 h-5 rounded flex items-center justify-center font-bold text-xs text-[#566F75]">-</button>
+                <span class="w-5 text-center font-bold text-xs font-mono">${item.qty}</span>
+                <button onclick="updateCartQty(${idx}, 1)" class="w-5 h-5 rounded flex items-center justify-center font-bold text-xs text-[#566F75]">+</button>
+              </div>
+            </div>
+          `;
+          container.appendChild(itemEl);
+        });
+      }
+
+      const subtotalTotal = state.cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
+      const taxable = subtotalTotal / 1.18;
+      const tax = subtotalTotal - taxable;
+      const totalFinal = subtotalTotal + state.tipAmount;
+
+      document.getElementById('summary-subtotal').textContent = `S/ ${taxable.toFixed(2)}`;
+      document.getElementById('summary-tax').textContent = `S/ ${tax.toFixed(2)}`;
+      document.getElementById('summary-tip').textContent = `S/ ${state.tipAmount.toFixed(2)}`;
+      document.getElementById('summary-total').textContent = `S/ ${totalFinal.toFixed(2)}`;
+    }
+
+    function openCashPayment() {
+      if (state.cart.length === 0) {
+        alert("La comanda está vacía.");
+        return;
+      }
+      const total = state.cart.reduce((acc, i) => acc + (i.price * i.qty), 0) + state.tipAmount;
+      document.getElementById('cash-modal-total').textContent = `S/ ${total.toFixed(2)}`;
+      document.getElementById('cash-input-tendered').value = '';
+      document.getElementById('cash-modal-change').textContent = `S/ 0.00`;
+      document.getElementById('modal-cash').classList.remove('hidden');
+      document.getElementById('cash-input-tendered').focus();
+    }
+
+    function closeCashModal() {
+      document.getElementById('modal-cash').classList.add('hidden');
+    }
+
+    function setTendered(amount) {
+      document.getElementById('cash-input-tendered').value = amount.toFixed(2);
+      calcChange();
+    }
+
+    function setTenderedExact() {
+      const total = state.cart.reduce((acc, i) => acc + (i.price * i.qty), 0) + state.tipAmount;
+      document.getElementById('cash-input-tendered').value = total.toFixed(2);
+      calcChange();
+    }
+
+    function calcChange() {
+      const total = state.cart.reduce((acc, i) => acc + (i.price * i.qty), 0) + state.tipAmount;
+      const tendered = parseFloat(document.getElementById('cash-input-tendered').value) || 0;
+      const change = tendered - total;
+      const changeEl = document.getElementById('cash-modal-change');
+      const confirmBtn = document.getElementById('btn-complete-cash');
+
+      if (change < 0) {
+        changeEl.textContent = `Faltan S/ ${Math.abs(change).toFixed(2)}`;
+        changeEl.className = "text-xl font-bold font-mono text-rose-600";
+        confirmBtn.disabled = true;
+      } else {
+        changeEl.textContent = `S/ ${change.toFixed(2)}`;
+        changeEl.className = "text-xl font-bold font-mono text-emerald-700";
+        confirmBtn.disabled = false;
+      }
+    }
+
+    function executeCashCheckout() {
+      const total = state.cart.reduce((acc, i) => acc + (i.price * i.qty), 0) + state.tipAmount;
+      const tendered = parseFloat(document.getElementById('cash-input-tendered').value) || total;
+      finishCheckout('EFECTIVO', tendered, tendered - total);
+      closeCashModal();
+    }
+
+    function openDigitalPayment(provider) {
+      if (state.cart.length === 0) return;
+      const total = state.cart.reduce((acc, i) => acc + (i.price * i.qty), 0) + state.tipAmount;
+      document.getElementById('digital-modal-total').textContent = `S/ ${total.toFixed(2)}`;
+      document.getElementById('digital-voucher-ref').value = '';
+      document.getElementById('modal-digital').classList.remove('hidden');
+    }
+
+    function closeDigitalModal() {
+      document.getElementById('modal-digital').classList.add('hidden');
+    }
+
+    function executeDigitalCheckout() {
+      const total = state.cart.reduce((acc, i) => acc + (i.price * i.qty), 0) + state.tipAmount;
+      const ref = document.getElementById('digital-voucher-ref').value || 'YAPE-TEST';
+      finishCheckout(`DIGITAL (${ref})`, total, 0.00);
+      closeDigitalModal();
+    }
+
+    function openCardPayment() {
+      if (state.cart.length === 0) return;
+      const total = state.cart.reduce((acc, i) => acc + (i.price * i.qty), 0) + state.tipAmount;
+      if (confirm(`Cobrar S/ ${total.toFixed(2)} con tarjeta?`)) {
+        finishCheckout('TARJETA POS', total, 0.00);
+      }
+    }
+
+    function finishCheckout(paymentMethod, tendered, change) {
+      const ticketNum = state.activeTicketNumber;
+      const barraItems = state.cart.filter(i => i.station === 'BARRA');
+
+      if (barraItems.length > 0) {
+        state.kdsOrders.push({
+          id: 'kds-' + Date.now(),
+          ticketNum: ticketNum,
+          orderType: state.orderType,
+          elapsedSeconds: 0,
+          status: 'RECEIVED',
+          items: barraItems.map(i => ({ name: i.name, modifiers: i.modifiers, qty: i.qty }))
+        });
+        renderKdsCards();
+      }
+
+      populateReceiptView(ticketNum, paymentMethod, tendered, change);
+      const nextNum = parseInt(ticketNum.split('-')[1]) + 1;
+      state.activeTicketNumber = `C1-${String(nextNum).padStart(4, '0')}`;
+      document.getElementById('next-ticket-num').textContent = state.activeTicketNumber;
+      state.cart = [];
+      state.tipAmount = 0.00;
+      renderCart();
+      switchView('ticket');
+    }
+
+    function populateReceiptView(ticketNum, paymentMethod, tendered, change) {
+      document.getElementById('receipt-ticket-num').textContent = `TICKET: ${ticketNum}`;
+      document.getElementById('receipt-date').textContent = new Date().toLocaleString('es-PE');
+      document.getElementById('receipt-type').textContent = state.orderType === 'TAKEAWAY' ? '[LLEVAR]' : '[SALÓN]';
+
+      const itemsList = document.getElementById('receipt-items-list');
+      itemsList.innerHTML = '';
+      let subtotal = 0;
+
+      state.cart.forEach(item => {
+        const lineTotal = item.price * item.qty;
+        subtotal += lineTotal;
+        const row = document.createElement('div');
+        row.innerHTML = `
+          <div class="flex justify-between font-bold">
+            <span>${item.qty} x ${item.name}</span>
+            <span class="font-mono">S/ ${lineTotal.toFixed(2)}</span>
+          </div>
+          ${item.modifiers.length > 0 ? `<div class="text-[10px] text-gray-500 pl-2 font-mono">${item.modifiers.map(m => `+ ${m}`).join('<br>')}</div>` : ''}
+        `;
+        itemsList.appendChild(row);
+      });
+
+      const taxable = subtotal / 1.18;
+      const tax = subtotal - taxable;
+      const total = subtotal + state.tipAmount;
+
+      document.getElementById('receipt-subtotal').textContent = `S/ ${taxable.toFixed(2)}`;
+      document.getElementById('receipt-tax').textContent = `S/ ${tax.toFixed(2)}`;
+      document.getElementById('receipt-tip').textContent = `S/ ${state.tipAmount.toFixed(2)}`;
+      document.getElementById('receipt-total').textContent = `S/ ${total.toFixed(2)}`;
+      document.getElementById('receipt-payment-method').textContent = paymentMethod;
+      document.getElementById('receipt-tendered').textContent = `S/ ${tendered.toFixed(2)}`;
+      document.getElementById('receipt-change').textContent = `S/ ${change.toFixed(2)}`;
+    }
+
+    function startKdsTimer() {
+      setInterval(() => {
+        state.kdsOrders.forEach(o => {
+          if (o.status !== 'READY') o.elapsedSeconds += 1;
+        });
+        updateKdsTimersUI();
+      }, 1000);
+    }
+
+    function updateKdsTimersUI() {
+      state.kdsOrders.forEach(o => {
+        const timerEl = document.getElementById(`kds-timer-${o.id}`);
+        if (!timerEl) return;
+        const mins = Math.floor(o.elapsedSeconds / 60);
+        const secs = o.elapsedSeconds % 60;
+        timerEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+        if (o.elapsedSeconds < 90) {
+          timerEl.className = "text-xs font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40";
+        } else if (o.elapsedSeconds <= 180) {
+          timerEl.className = "text-xs font-mono font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40";
+        } else {
+          timerEl.className = "text-xs font-mono font-bold px-2 py-0.5 rounded bg-rose-500/30 text-rose-300 border border-rose-500 animate-pulse";
+        }
+      });
+    }
+
+    function renderKdsCards() {
+      const container = document.getElementById('kds-cards-container');
+      const badge = document.getElementById('kds-badge');
+      if (badge) badge.textContent = state.kdsOrders.length;
+      container.innerHTML = '';
+
+      if (state.kdsOrders.length === 0) {
+        container.innerHTML = `
+          <div class="h-64 w-full flex flex-col items-center justify-center text-center text-[#566F75]">
+            <p class="text-sm font-bold text-white">Barra Despejada</p>
+            <p class="text-xs text-[#7FBCC6]">No hay órdenes pendientes en cola</p>
+          </div>
+        `;
+        return;
+      }
+
+      state.kdsOrders.forEach(order => {
+        const card = document.createElement('div');
+        card.className = "w-72 bg-[#2C3B42] rounded-2xl border border-[#566F75]/40 flex flex-col shadow-xl flex-shrink-0 overflow-hidden";
+        card.id = `kds-card-${order.id}`;
+
+        let btnActionText = order.status === 'PREPARING' ? "Completar & Listo" : "Iniciar Preparación";
+        let btnActionColor = order.status === 'PREPARING' ? "bg-emerald-600 hover:bg-emerald-500" : "bg-[#00B4D8] hover:bg-[#0096B4]";
+        const mins = Math.floor(order.elapsedSeconds / 60);
+        const secs = order.elapsedSeconds % 60;
+        const timeStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+        card.innerHTML = `
+          <div class="p-3 bg-[#1E292E] border-b border-[#566F75]/30 flex justify-between items-center">
+            <div>
+              <span class="font-mono text-sm font-bold text-white">${order.ticketNum}</span>
+              <span class="ml-1 text-[11px] px-1.5 py-0.5 rounded font-semibold ${order.orderType === 'TAKEAWAY' ? 'bg-amber-900/60 text-amber-300' : 'bg-blue-900/60 text-blue-300'}">
+                ${order.orderType === 'TAKEAWAY' ? 'Llevar' : 'Salón'}
+              </span>
+            </div>
+            <div id="kds-timer-${order.id}" class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">${timeStr}</div>
+          </div>
+          <div class="p-3.5 space-y-3 flex-1 overflow-y-auto">
+            ${order.items.map(item => `
+              <div class="border-b border-[#566F75]/30 pb-2 last:border-0 last:pb-0">
+                <div class="flex items-baseline justify-between"><span class="font-bold text-base text-white">${item.qty} x ${item.name}</span></div>
+                ${item.modifiers && item.modifiers.length > 0 ? `
+                  <div class="mt-1 space-y-0.5">
+                    ${item.modifiers.map(mod => `<div class="text-xs font-bold uppercase tracking-wider text-[#00B4D8] bg-[#1E292E] px-2 py-0.5 rounded inline-block mr-1">★ ${mod}</div>`).join('')}
+                  </div>
+                ` : ''}
+              </div>
+            `).join('')}
+          </div>
+          <div class="p-3 bg-[#1E292E]/60 border-t border-[#566F75]/30 flex gap-2">
+            <button onclick="advanceKdsOrder('${order.id}')" class="flex-1 py-2.5 ${btnActionColor} text-white font-bold text-xs rounded-xl shadow-md transition-all active:scale-95">${btnActionText}</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function advanceKdsOrder(orderId) {
+      const order = state.kdsOrders.find(o => o.id === orderId);
+      if (!order) return;
+      if (order.status === 'RECEIVED') {
+        order.status = 'PREPARING';
+      } else if (order.status === 'PREPARING') {
+        state.kdsOrders = state.kdsOrders.filter(o => o.id !== orderId);
+      }
+      renderKdsCards();
+    }
+  </script>
+</body>
+</html>

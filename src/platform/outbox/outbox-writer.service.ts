@@ -23,4 +23,11 @@ export class OutboxWriterService {
       createdAt: new Date(),
     });
   }
+
+  /**
+   * Alias de conveniencia para compatibilidad con pruebas y servicios heredados.
+   */
+  public async writeEvent<T>(event: DomainEvent<T>): Promise<void> {
+    return this.write(event);
+  }
 }

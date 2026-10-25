@@ -1,17 +1,5 @@
 import { OrderType } from '../domain/order.entity';
-
-export interface OrderItemInputModifier {
-  modifierOptionId: string;
-  quantity: number;
-}
-
-export interface OrderItemInput {
-  productId: string;
-  variantId: string;
-  quantity: number;
-  notes?: string;
-  modifiers?: OrderItemInputModifier[];
-}
+import { OrderItemInput } from './create-order.dto';
 
 export interface CreateCashOrderCommand {
   storeId: string;

@@ -5,6 +5,7 @@ import { OutboxDispatcherService } from '../src/platform/outbox/outbox-dispatche
 import { KdsService } from '../src/modules/dispatch/services/kds.service';
 import { KdsGateway } from '../src/modules/dispatch/gateways/kds.gateway';
 import { KdsOrderPaidHandler } from '../src/modules/dispatch/handlers/kds-order-paid.handler';
+import { KdsOrderCard } from '../src/modules/dispatch/domain/kds-card.entity';
 import { DomainEvent } from '../src/shared-kernel/types/domain-event';
 
 describe('Paso 5: Pantalla de Barista (KDS) en Tiempo Real', () => {

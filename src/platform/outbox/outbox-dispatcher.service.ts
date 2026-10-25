@@ -44,6 +44,22 @@ export class OutboxDispatcherService {
     return processedCount;
   }
 
+  /**
+   * Despacha un evento específico (usado en tests y procesamiento selectivo).
+   */
+  public async dispatchSingleEvent(eventOrRecord: any): Promise<boolean> {
+    if (eventOrRecord?.payload && typeof eventOrRecord.payload === 'string') {
+      return this.dispatchSingle(eventOrRecord as OutboxRecord);
+    }
+    const id = eventOrRecord?.id || eventOrRecord?.eventId;
+    const records = await this.storage.findPending(100);
+    const found = records.find((r) => r.id === id || r.eventId === id);
+    if (found) {
+      return this.dispatchSingle(found);
+    }
+    return false;
+  }
+
   private async dispatchSingle(record: OutboxRecord): Promise<boolean> {
     try {
       const event: DomainEvent = JSON.parse(record.payload);

@@ -1,4 +1,4 @@
-import { Injectable, Inject, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, BadRequestException, NotFoundException, Optional } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { Money } from '@shared/types/money';
 import { DomainEvent } from '@shared/types/domain-event';
@@ -18,6 +18,9 @@ import { CreateCashOrderCommand } from '../api/create-cash-order.dto';
 
 @Injectable()
 export class SalesService {
+  private readonly authService: AuthService;
+  private readonly auditService: AuditService;
+
   constructor(
     @Inject('SALES_REPOSITORY')
     private readonly salesRepo: ISalesRepository,
@@ -27,9 +30,12 @@ export class SalesService {
     private readonly pricingService: PricingService,
     private readonly outboxWriter: OutboxWriterService,
     private readonly printBridge: PrintBridgeService,
-    private readonly authService: AuthService,
-    private readonly auditService: AuditService,
-  ) {}
+    @Optional() authService?: AuthService,
+    @Optional() auditService?: AuditService,
+  ) {
+    this.authService = authService ?? new AuthService();
+    this.auditService = auditService ?? new AuditService();
+  }
 
   /**
    * Cobro multi-medio completo con soporte de descuentos y cortesías.

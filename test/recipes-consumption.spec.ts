@@ -281,7 +281,7 @@ describe('Paso 11: Recetas de Taza (Escandallo de Barra por gramos de café y ml
         eventId: 'evt-order-dinein-1',
         eventType: 'order.paid.v1',
         schemaVersion: 1,
-        occurredAt: new Date(),
+        occurredAt: new Date().toISOString(),
         storeId: testStoreId,
         payload: {
           orderId: 'ord-dinein-001',
@@ -338,7 +338,7 @@ describe('Paso 11: Recetas de Taza (Escandallo de Barra por gramos de café y ml
         eventId: 'evt-order-takeaway-1',
         eventType: 'order.paid.v1',
         schemaVersion: 1,
-        occurredAt: new Date(),
+        occurredAt: new Date().toISOString(),
         storeId: testStoreId,
         payload: {
           orderId: 'ord-takeaway-002',
@@ -403,7 +403,7 @@ describe('Paso 11: Recetas de Taza (Escandallo de Barra por gramos de café y ml
         eventId: 'evt-order-multi-1',
         eventType: 'order.paid.v1',
         schemaVersion: 1,
-        occurredAt: new Date(),
+        occurredAt: new Date().toISOString(),
         storeId: testStoreId,
         payload: {
           orderId: 'ord-multi-003',
@@ -441,7 +441,7 @@ describe('Paso 11: Recetas de Taza (Escandallo de Barra por gramos de café y ml
         eventId: 'evt-order-vitrina-only',
         eventType: 'order.paid.v1',
         schemaVersion: 1,
-        occurredAt: new Date(),
+        occurredAt: new Date().toISOString(),
         storeId: testStoreId,
         payload: {
           orderId: 'ord-vitrina-004',

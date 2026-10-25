@@ -13,6 +13,7 @@ import { PurchasingModule } from './modules/purchasing/purchasing.module';
 import { RecipesModule } from './modules/recipes/recipes.module';
 import { WasteModule } from './modules/waste/waste.module';
 import { DiningModule } from './modules/dining/dining.module';
+import { ProductionModule } from './modules/production/production.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { DiningModule } from './modules/dining/dining.module';
     RecipesModule,
     WasteModule,
     DiningModule,
+    ProductionModule,
   ],
   controllers: [],
   providers: [],

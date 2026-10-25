@@ -1,0 +1,79 @@
+# ==============================================================================
+# CoffeeOS - BENEVENTO (.gitignore)
+# ==============================================================================
+
+# Dependencias
+node_modules/
+/.pnp
+.pnp.js
+
+# Compilación y artefactos de build (NestJS / TypeScript / Frontend)
+dist/
+build/
+out/
+.next/
+*.tsbuildinfo
+
+# Registros y logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Cobertura y reportes de pruebas
+coverage/
+.nyc_output/
+*.lcov
+
+# Variables de entorno y secretos
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+# Mantener ejemplos públicos
+!.env.example
+!.env.test
+
+# Base de datos local y Prisma
+prisma/*.db
+prisma/*.db-journal
+*.sqlite
+*.sqlite3
+
+# Archivos de caché y temporales
+.cache/
+.parcel-cache/
+.turbo/
+tmp/
+temp/
+
+# Editores y entornos de desarrollo (IDE)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+*.swp
+*.swo
+
+# Archivos del sistema operativo
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini
+
+# Archivos temporales de hardware / buffers binarios
+*.raw
+*.bin

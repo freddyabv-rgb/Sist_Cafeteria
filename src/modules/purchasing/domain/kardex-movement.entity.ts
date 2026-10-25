@@ -4,6 +4,7 @@ import { Money } from '@shared/types/money';
 export type KardexMovementType =
   | 'PURCHASE_RECEIPT'
   | 'RECIPE_CONSUMPTION'
+  | 'PRODUCTION_CONSUMPTION'
   | 'WASTE_DISPOSAL'
   | 'GRINDER_CALIBRATION'
   | 'PHYSICAL_INVENTORY_ADJUSTMENT';

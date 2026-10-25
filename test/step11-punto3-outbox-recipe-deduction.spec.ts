@@ -79,7 +79,7 @@ describe('Paso 11 - Punto 3: Suscriptor Outbox order.paid.v1 y Descuento en Kard
     const csvPath = path.resolve(__dirname, '../data/benevento-menu-seed.csv');
     const csvContent = fs.readFileSync(csvPath, 'utf-8');
     await csvImporter.importFromCsv(testStoreId, csvContent);
-    catalogService = new CatalogService(catalogRepo, pricingService);
+    catalogService = new CatalogService(catalogRepo, csvImporter);
 
     // 3. Caja
     cashRepo = new InMemoryCashRepository();

@@ -27,6 +27,28 @@ export class InMemoryOutboxStorage implements IOutboxStorage {
     return list;
   }
 
+  /**
+   * Helper para suites de pruebas unitarias/integración: retorna los eventos pendientes
+   * con el payload JSON ya parseado.
+   */
+  public async findUnpublishedEvents(): Promise<any[]> {
+    const list: any[] = [];
+    for (const record of this.records.values()) {
+      if (!record.publishedAt) {
+        try {
+          const parsed = JSON.parse(record.payload);
+          list.push({
+            id: record.id,
+            ...parsed,
+          });
+        } catch {
+          list.push(record);
+        }
+      }
+    }
+    return list;
+  }
+
   public async markPublished(id: string): Promise<void> {
     const item = this.records.get(id);
     if (item) {

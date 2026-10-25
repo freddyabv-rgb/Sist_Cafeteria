@@ -60,7 +60,7 @@ describe('Paso 13: Salón, Mesas y Cuentas Abiertas (Dining & Table Service)', (
     const csvPath = path.resolve(__dirname, '../data/benevento-menu-seed.csv');
     const csvContent = fs.readFileSync(csvPath, 'utf-8');
     await csvImporter.importFromCsv(testStoreId, csvContent);
-    catalogService = new CatalogService(catalogRepo, pricingService);
+    catalogService = new CatalogService(catalogRepo, csvImporter);
 
     // 3. Caja
     cashRepo = new InMemoryCashRepository();

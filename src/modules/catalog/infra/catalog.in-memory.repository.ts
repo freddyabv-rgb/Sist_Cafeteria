@@ -52,6 +52,15 @@ export class InMemoryCatalogRepository implements ICatalogRepository {
     return this.products.get(id) || null;
   }
 
+  public async findProductByName(storeId: string, name: string): Promise<Product | null> {
+    for (const prod of this.products.values()) {
+      if (prod.storeId === storeId && prod.name.trim().toLowerCase() === name.trim().toLowerCase()) {
+        return prod;
+      }
+    }
+    return null;
+  }
+
   public async setProductAvailability(id: string, isAvailable: boolean): Promise<void> {
     const prod = this.products.get(id);
     if (prod) {

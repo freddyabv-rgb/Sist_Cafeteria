@@ -3,6 +3,7 @@ import { Money } from '@shared/types/money';
 export interface IngredientDeductionInput {
   ingredientId: string;
   quantityUnits: number;
+  unit?: string;
 }
 
 export interface WasteDeductionResult {
@@ -57,4 +58,15 @@ export interface IngredientStockPort {
     userId: string,
     documentReference?: string,
   ): Promise<WasteDeductionResult>;
+
+  /**
+   * Descuenta materias primas consumidas en un lote de producción de obrador / pastelería.
+   */
+  deductProductionIngredients?(
+    storeId: string,
+    deductions: IngredientDeductionInput[],
+    batchId: string,
+    batchNumber: string,
+    bakerUserId: string,
+  ): Promise<WasteDeductionResult[]>;
 }

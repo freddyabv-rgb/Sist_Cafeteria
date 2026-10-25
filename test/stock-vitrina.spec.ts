@@ -148,7 +148,7 @@ describe('Paso 9: Stock de Vitrina y Agotado Automático (AvailabilityPort)', ()
     const result = await stockService.deductForSale(testStoreId, croissantVariantId, 11, 'ord-rush');
     expect(result).not.toBeNull();
     expect(result!.remainingStock).toBe(-1);
-    expect(result!.isOutOfStock()).toBe(true);
+    expect(result!.isOutOfStock).toBe(true);
 
     const item = await stockService.getStockItem(testStoreId, croissantVariantId);
     expect(item!.currentStock).toBe(-1);

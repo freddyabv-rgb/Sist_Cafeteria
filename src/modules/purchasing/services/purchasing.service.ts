@@ -218,7 +218,7 @@ export class PurchasingService implements IngredientStockPort {
     if (dto.documentType === 'FACTURA') {
       // Con factura en Perú, el precio pactado suele ser total con IGV o subtotal + IGV.
       // Modelamos subtotal = total / 1.18 y taxAmount = total - subtotal
-      const totalCents = orderTotalCost.cents;
+      const totalCents = orderTotalCost.toCents();
       const subtotalCents = Math.round(totalCents / 1.18);
       const taxCents = totalCents - subtotalCents;
       subtotal = Money.fromCents(subtotalCents, 'PEN');
@@ -259,7 +259,7 @@ export class PurchasingService implements IngredientStockPort {
       eventId: uuidv4(),
       eventType: 'purchase.received.v1',
       schemaVersion: 1,
-      occurredAt: new Date(),
+      occurredAt: new Date().toISOString(),
       storeId: dto.storeId,
       payload: {
         purchaseOrderId: purchaseOrder.id,
@@ -269,7 +269,7 @@ export class PurchasingService implements IngredientStockPort {
         itemCount: purchaseOrder.items.length,
       },
     };
-    await this.outboxWriter.writeEvent(purchaseEvent);
+    await this.outboxWriter.write(purchaseEvent);
 
     return purchaseOrder;
   }
@@ -322,7 +322,7 @@ export class PurchasingService implements IngredientStockPort {
       eventId: uuidv4(),
       eventType: 'ingredient.stock_adjusted.v1',
       schemaVersion: 1,
-      occurredAt: new Date(),
+      occurredAt: new Date().toISOString(),
       storeId: dto.storeId,
       payload: {
         ingredientId: ingredient.id,
@@ -332,7 +332,7 @@ export class PurchasingService implements IngredientStockPort {
         reason: dto.reason,
       },
     };
-    await this.outboxWriter.writeEvent(adjustEvent);
+    await this.outboxWriter.write(adjustEvent);
 
     this.logger.log(
       `[AJUSTE FISICO] ${ingredient.name}: Stock teórico ${stockBefore} -> Conteo físico ${ingredient.currentStock} (Diferencia: ${diff})`,
@@ -492,5 +492,59 @@ export class PurchasingService implements IngredientStockPort {
       totalCost: movementCost,
       stockBalanceAfter: ingredient.currentStock,
     };
+  }
+
+  public async deductProductionIngredients(
+    storeId: string,
+    deductions: IngredientDeductionInput[],
+    batchId: string,
+    batchNumber: string,
+    bakerUserId: string,
+  ): Promise<WasteDeductionResult[]> {
+    const results: WasteDeductionResult[] = [];
+
+    for (const item of deductions) {
+      const ingredient = await this.purchasingRepo.findIngredientById(item.ingredientId);
+      if (!ingredient) {
+        throw new NotFoundException(`Insumo con ID "${item.ingredientId}" no encontrado para producción.`);
+      }
+
+      ingredient.deductStock(item.quantityUnits);
+      await this.purchasingRepo.saveIngredient(ingredient);
+
+      const movementCost = Money.fromDecimal(item.quantityUnits * ingredient.currentAverageCostDec, 'PEN');
+      const movementId = uuidv4();
+      const movement = new KardexMovement({
+        id: movementId,
+        storeId,
+        ingredientId: ingredient.id,
+        ingredientCode: ingredient.code,
+        ingredientName: ingredient.name,
+        type: 'PRODUCTION_CONSUMPTION',
+        documentReference: `Lote #${batchNumber}`,
+        quantityChange: -item.quantityUnits,
+        unitCostDec: ingredient.currentAverageCostDec,
+        totalMovementCost: movementCost,
+        stockBalanceAfter: ingredient.currentStock,
+        cppAfterDec: ingredient.currentAverageCostDec,
+        totalInventoryValueAfter: ingredient.getTotalInventoryValue(),
+        reason: `Consumo de insumos para lote de obrador #${batchNumber}`,
+        createdAt: new Date(),
+      });
+
+      await this.purchasingRepo.saveKardexMovement(movement);
+
+      results.push({
+        movementId,
+        ingredientId: ingredient.id,
+        ingredientName: ingredient.name,
+        quantityUnits: item.quantityUnits,
+        unitCostDec: ingredient.currentAverageCostDec,
+        totalCost: movementCost,
+        stockBalanceAfter: ingredient.currentStock,
+      });
+    }
+
+    return results;
   }
 }

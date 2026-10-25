@@ -176,7 +176,10 @@ export class DiningService {
         throw new BadRequestException('La cantidad de cada ítem debe ser mayor a cero.');
       }
 
-      const product = await this.catalogService.getProductById(dto.storeId, itemInput.productId);
+      const product = await this.catalogService.getProductById(itemInput.productId);
+      if (!product) {
+        throw new NotFoundException(`Producto "${itemInput.productId}" no encontrado en el catálogo.`);
+      }
       const variant = product.variants.find((v) => v.id === itemInput.variantId);
       if (!variant) {
         throw new NotFoundException(`Variante "${itemInput.variantId}" no encontrada en el catálogo.`);
@@ -184,15 +187,17 @@ export class DiningService {
 
       // Resolver modificadores seleccionados
       const itemModifiers: TabItemModifier[] = [];
-      const pricingModifiers: Array<{ optionId: string; quantity: number }> = [];
+      const pricingModifiers: Array<{ option: any; groupName: string; quantity: number }> = [];
 
       if (itemInput.modifiers) {
         for (const mInput of itemInput.modifiers) {
           let foundOption: any = null;
+          let foundGroupName = '';
           for (const grp of product.modifierGroups) {
             const opt = grp.options.find((o) => o.id === mInput.modifierOptionId);
             if (opt) {
               foundOption = opt;
+              foundGroupName = grp.name;
               break;
             }
           }
@@ -205,21 +210,19 @@ export class DiningService {
               priceDelta: foundOption.priceDelta,
             });
             pricingModifiers.push({
-              optionId: foundOption.id,
+              option: foundOption,
+              groupName: foundGroupName,
               quantity: mInput.quantity,
             });
           }
         }
       }
 
-      const priceResult = this.pricingService.calculateItemPrice({
-        basePrice: variant.price,
-        quantity: itemInput.quantity,
-        modifiers: pricingModifiers.map((m) => {
-          const mod = itemModifiers.find((x) => x.modifierOptionId === m.optionId);
-          return { priceDelta: mod!.priceDelta, quantity: m.quantity };
-        }),
-      });
+      const priceResult = this.pricingService.calculateItem(
+        variant,
+        pricingModifiers,
+        itemInput.quantity,
+      );
 
       const tabItem = new TabItem({
         id: uuidv4(),

@@ -202,6 +202,64 @@ export class StockService {
   }
 
   /**
+   * Ingresa un lote terminado de producción/horneado a la vitrina, actualizando stock y costo unitario.
+   */
+  public async receiveProductionBatch(input: {
+    storeId: string;
+    productId: string;
+    productVariantId: string;
+    productName: string;
+    variantName: string;
+    quantity: number;
+    unitCost: Money;
+    batchNumber: string;
+  }): Promise<ShowcaseStockItem> {
+    let item = await this.stockRepo.findStockItem(input.storeId, input.productVariantId);
+    let stockBefore = 0;
+
+    if (!item) {
+      item = new ShowcaseStockItem({
+        id: uuidv4(),
+        storeId: input.storeId,
+        productId: input.productId,
+        productVariantId: input.productVariantId,
+        productName: input.productName,
+        variantName: input.variantName,
+        currentStock: input.quantity,
+        minStockAlert: 5,
+        allowNegative: true,
+        unitCost: input.unitCost,
+        lastUpdated: new Date(),
+      });
+    } else {
+      stockBefore = item.currentStock;
+      item.replenish(input.quantity);
+      item.unitCost = input.unitCost;
+    }
+
+    await this.stockRepo.saveStockItem(item);
+
+    const movement = new StockMovement({
+      id: uuidv4(),
+      stockItemId: item.id,
+      storeId: input.storeId,
+      type: 'RESTOCK',
+      quantityChange: input.quantity,
+      stockBefore,
+      stockAfter: item.currentStock,
+      reason: `Ingreso de lote de producción #${input.batchNumber}`,
+      referenceId: input.batchNumber,
+      createdAt: new Date(),
+    });
+
+    await this.stockRepo.saveMovement(movement);
+    this.logger.log(
+      `[PRODUCCIÓN -> VITRINA] Recibidas ${input.quantity} unidades de "${input.productName}" (Lote #${input.batchNumber}, Costo: ${input.unitCost.format()})`,
+    );
+    return item;
+  }
+
+  /**
    * Ajuste de conteo físico para cuadres de vitrina.
    */
   public async adjustPhysicalCount(

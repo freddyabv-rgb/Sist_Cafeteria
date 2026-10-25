@@ -42,28 +42,53 @@ export class CashService implements CashShiftPort {
   ) {}
 
   public async openShift(
-    storeId: string,
-    registerId: string,
-    userId: string,
-    initialCashAmount: number,
+    storeIdOrDto:
+      | string
+      | {
+          storeId: string;
+          registerId: string;
+          userId: string;
+          initialCashDecimal?: number;
+          initialCashAmount?: number;
+        },
+    registerId?: string,
+    userId?: string,
+    initialCashAmount?: number,
   ): Promise<RegisterShift> {
-    const existing = await this.cashRepo.findActiveShift(storeId, registerId);
+    let sId: string;
+    let rId: string;
+    let uId: string;
+    let amount: number;
+
+    if (typeof storeIdOrDto === 'object' && storeIdOrDto !== null) {
+      sId = storeIdOrDto.storeId;
+      rId = storeIdOrDto.registerId;
+      uId = storeIdOrDto.userId;
+      amount = storeIdOrDto.initialCashDecimal ?? storeIdOrDto.initialCashAmount ?? 0;
+    } else {
+      sId = storeIdOrDto;
+      rId = registerId!;
+      uId = userId!;
+      amount = initialCashAmount ?? 0;
+    }
+
+    const existing = await this.cashRepo.findActiveShift(sId, rId);
     if (existing) {
       throw new BadRequestException(
         `Ya existe un turno abierto (ID: ${existing.id}) para esta caja. Debe cerrarse antes de abrir uno nuevo.`,
       );
     }
 
-    if (initialCashAmount < 0) {
+    if (amount < 0) {
       throw new BadRequestException('El fondo inicial de caja no puede ser negativo.');
     }
 
-    const initialCash = Money.fromDecimal(initialCashAmount, 'PEN');
+    const initialCash = Money.fromDecimal(amount, 'PEN');
     const shift = new RegisterShift({
       id: uuidv4(),
-      storeId,
-      registerId,
-      userId,
+      storeId: sId,
+      registerId: rId,
+      userId: uId,
       openedAt: new Date(),
       initialCash,
       status: 'OPEN',
@@ -129,6 +154,7 @@ export class CashService implements CashShiftPort {
   public async calculateExpectedCash(shiftId: string): Promise<{
     expectedCash: Money;
     initialCash: Money;
+    cashSalesTotal: Money;
     breakdown: ShiftPaymentsBreakdown;
     expensesTotal: Money;
     cashDropsTotal: Money;
@@ -163,6 +189,7 @@ export class CashService implements CashShiftPort {
     return {
       expectedCash,
       initialCash: shift.initialCash,
+      cashSalesTotal: breakdown.cashSales,
       breakdown,
       expensesTotal,
       cashDropsTotal,

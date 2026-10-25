@@ -53,7 +53,7 @@ export class ProductionService {
     }
 
     // Resolver datos del catálogo de la variante terminada
-    const catalogProducts = await this.catalogService.getCatalog(dto.storeId);
+    const catalogProducts = await this.catalogService.getProducts(dto.storeId);
     let targetProduct: any = null;
     let targetVariant: any = null;
 
@@ -294,7 +294,7 @@ export class ProductionService {
     await this.productionRepo.saveBatch(batch);
 
     // Ingresar unidades aptas a la vitrina (ShowcaseStockItem)
-    const catalogProducts = await this.catalogService.getCatalog(dto.storeId);
+    const catalogProducts = await this.catalogService.getProducts(dto.storeId);
     let productId = 'prod-vitrina';
     for (const p of catalogProducts) {
       if (p.variants.some((v) => v.id === batch.productVariantId)) {

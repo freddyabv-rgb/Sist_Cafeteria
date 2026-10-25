@@ -261,6 +261,8 @@ export class PurchasingService implements IngredientStockPort {
       schemaVersion: 1,
       occurredAt: new Date().toISOString(),
       storeId: dto.storeId,
+      correlationId: `purchase-${purchaseOrder.id}`,
+      actor: { userId: dto.receivedByUserId },
       payload: {
         purchaseOrderId: purchaseOrder.id,
         supplierId: supplier.id,
@@ -324,6 +326,8 @@ export class PurchasingService implements IngredientStockPort {
       schemaVersion: 1,
       occurredAt: new Date().toISOString(),
       storeId: dto.storeId,
+      correlationId: `adjust-${ingredient.id}-${movement.id}`,
+      actor: { userId: dto.adjustedByUserId },
       payload: {
         ingredientId: ingredient.id,
         ingredientCode: ingredient.code,

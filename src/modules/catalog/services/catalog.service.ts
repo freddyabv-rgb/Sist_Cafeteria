@@ -22,6 +22,10 @@ export class CatalogService implements AvailabilityPort {
     return this.catalogRepo.findProducts(storeId, categoryId);
   }
 
+  public async getCatalog(storeId: string): Promise<Product[]> {
+    return this.catalogRepo.findProducts(storeId);
+  }
+
   public async getProductById(productId: string): Promise<Product | null> {
     return this.catalogRepo.findProductById(productId);
   }

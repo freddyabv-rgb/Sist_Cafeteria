@@ -60,16 +60,16 @@ export class CashService implements CashShiftPort {
     let uId: string;
     let amount: number;
 
-    if (typeof storeIdOrDto === 'object' && storeIdOrDto !== null) {
-      sId = storeIdOrDto.storeId;
-      rId = storeIdOrDto.registerId;
-      uId = storeIdOrDto.userId;
-      amount = storeIdOrDto.initialCashDecimal ?? storeIdOrDto.initialCashAmount ?? 0;
-    } else {
+    if (typeof storeIdOrDto === 'string') {
       sId = storeIdOrDto;
       rId = registerId!;
       uId = userId!;
       amount = initialCashAmount ?? 0;
+    } else {
+      sId = storeIdOrDto.storeId;
+      rId = storeIdOrDto.registerId;
+      uId = storeIdOrDto.userId;
+      amount = storeIdOrDto.initialCashDecimal ?? storeIdOrDto.initialCashAmount ?? 0;
     }
 
     const existing = await this.cashRepo.findActiveShift(sId, rId);

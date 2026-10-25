@@ -13,9 +13,9 @@ export interface DomainEvent<TPayload = unknown> {
   schemaVersion: number;    // Versión del payload para migraciones no destructivas
   occurredAt: string;       // Timestamp ISO 8601 en UTC
   storeId: string;          // Identificador de la tienda / sucursal
-  correlationId: string;    // Identificador para trazabilidad de la operación
+  correlationId?: string;   // Identificador para trazabilidad de la operación
   causationId?: string;     // ID del evento o comando causal
-  actor: DomainEventActor;  // Usuario o terminal que originó el evento
+  actor?: DomainEventActor; // Usuario o terminal que originó el evento
   payload: TPayload;        // Carga de datos tipada del evento
 }
 
